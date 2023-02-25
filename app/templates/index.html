@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container">
+	<div class="row">
+        <div class="col-lg-12 col-md-12 col-sm-12">
+            <button type="button" class="btn btn-primary" title="Shopping Cart" style="float: right; width:100px;font-size: 20px";
+                    data-toggle="modal" data-target="#cartModal" >
+                <span id="cart-item-count">0</span>
+                <span class="glyphicon glyphicon-shopping-cart" aria-hidden="true"></span>
+            </button>
+          <h3 class="text-center">Store</h3>
+            <table class="table table-bordered table-hover table-responsive" id="shop-table">
+                <thead>
+                    <th>Item</th>
+                    <th>Barcode</th>
+					<th>Remaining Qty</th>
+                    <th>Retail Price</th>
+                    <th>Action</th>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    {% set total_inv = item.get_total_inv() %}
+                    {% set retail_price = item.last_retail_price() %}
+                    <tr>
+                        <td>
+                            <div {% if item.date_discontinued %} style="color: red" {% endif %}>
+                                {{ item.item_name }}
+                                {% if item.date_discontinued %} (Discontinued) {% endif %}
+                            </div>
+                            <div class="help-block">{{ item.description }}</div>
+                        </td>
+                        <td>{{ item.barcode }}</td>
+                        <td>{{ total_inv }}</td>
+                        <td>&#x20B1; {{ retail_price }}</td>
+                        <td class="fit-cell">
+                            <div style="width: fit-content">
+                                <input class="form-control" id="item-{{ item.id }}-purchase-qty" data-item-id="{{ item.id }}"
+                                   type="number" min="0" max="{{ total_inv }}" step="1" style="width: 30%;display: inline-block;">
+                                <input class="form-control" id="item-{{ item.id }}-purchase-total" data-totalvalue="0" data-item-id="{{ item.id }}"
+                                    style="width: 40%;display: inline-block;" readonly>
+                                <button class="btn btn-danger" title="Add to cart"  style="width: 25%"
+                                    id="item-{{ item.id }}-btn" data-itemId="{{ item.id }}" data-itemName="{{ item.item_name }}"
+                                    data-barcode="{{ item.barcode }}" data-totalinv="{{ total_inv }}"
+                                    data-retailprice="{{ retail_price}}" data-description="{{ item.description }}">
+                                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                                    <span class="glyphicon glyphicon-shopping-cart" aria-hidden="true"></span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+	</div>
+</div>
+
+<div class="modal fade" id="cartModal" tabindex="-1" role="dialog" aria-labelledby="cartModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="cartModalLabel">Shopping Cart</h4>
+      </div>
+      <div class="modal-body">
+        <table class="table table-bordered" id="modalTable">
+            <thead>
+                <th>Item</th>
+                <th>Pruchase Qty</th>
+                <th>Total</th>
+                <th>Action</th>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-6">
+                <label for="payment" class="control-label">Payment</label>
+                <input class="form-control" type="number" id="payment" step="0.1">
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-6">
+                <label for="change" class="control-label">Change</label>
+                <input class="form-control" id="change" readonly>
+            </div>
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <label for="comment" class="control-label">Comments</label>
+                <input class="form-control" type="text" id="comment">
+            </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="checkout-btn">Checkout</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .fit-cell {
+        width: 25%;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready( function () {
+        $('#shop-table').DataTable();
+
+        {% for item in items %}
+            {% set total_inv = item.get_total_inv() %}
+            {% set retail_price = item.last_retail_price() %}
+
+
+            $("#item-{{ item.id }}-purchase-qty").change(function (){
+                if (this.value > {{ total_inv }}){
+                    this.value = {{ total_inv }};
+                }
+                var total{{ item.id }} = this.value * {{ retail_price }};
+                $("#item-{{ item.id }}-purchase-total").val("\u20B1 " + (total{{ item.id }}.toFixed(2)));
+                $("#item-{{ item.id }}-purchase-total").data('totalvalue', total{{ item.id }})
+            });
+
+            $("#item-{{ item.id }}-btn").click(function (event){
+                var itemId = this.dataset.itemid
+                var itemName = this.dataset.itemname
+                var description = this.dataset.description
+                var retailPrice = {{ retail_price }}//this.dataset.retailprice
+                console.log("itemId" + itemId)
+                var purchaseQty = $('#item-' + itemId + '-purchase-qty').val()
+                var purchaseTotal = $('#item-' + itemId + '-purchase-total').val()
+                var purchaseTotalValue = parseInt(purchaseQty) * {{ retail_price }}
+
+                $('#modalTr{{ item.id }}').remove()
+                var tr = "<tr id='modalTr{{ item.id }}' class='modal-tr' data-item-id='{{ item.id }}' " +
+                    "       data-retail-price='{{ retail_price }}' data-total-value=" + purchaseTotalValue + " data-purchase-qty=" + purchaseQty + ">" +
+                    "       <td class='modal-tr-item' data-item-id='{{ item.id }}' data-retail-price='{{ retail_price }}'>" +
+                    "           <div>" + itemName + " @\u20B1 " + retailPrice + "</div>" +
+                    "           <div class='help-block'>" + description + "</div>" +
+                    "       </td>" +
+                    "       <td class='modal-tr-qty'>" + purchaseQty + "</td>" +
+                    "       <td class='modal-tr-total' data-totalvalue=" + purchaseTotalValue + ">" + purchaseTotal + "</td>" +
+                    "       <td><button type='button' class='btn btn-danger remove-item-btn' data-toggle='tooltip' title='Remove item'><span class=\"glyphicon glyphicon-trash\" aria-hidden=\"true\"></span></button></td>" +
+                    "</tr>"
+
+                $('#modalTable tbody').append(tr)
+                $('#cart-item-count').html($('.modal-tr').length)
+            });
+
+
+        {% endfor %}
+
+        $('#cartModal').on('show.bs.modal', function () {
+            var totalItems = 0
+            var grandTotal = 0
+            $('.modal-tr-qty').each(function(){
+                totalItems += parseInt($(this).html());
+            });
+            $('.modal-tr-total').each(function(){
+                grandTotal += parseFloat($(this).data('totalvalue'));
+            });
+            var totalTr = "<tr id='modalTotalRow'>" +
+                    "       <td>Total: </td>" +
+                    "       <td id='modalItemsTotal'>" + totalItems + "</td>" +
+                    "       <td id='modalGrandTotal' data-totalvalue=" + grandTotal + ">\u20B1 " + grandTotal.toFixed(2) + "</td>" +
+                    "</tr>"
+                $('#modalTable tbody').append(totalTr)
+        })
+
+        $('#cartModal').on('hide.bs.modal', function () {
+            $('#modalTotalRow').remove()
+        })
+
+        $('#modalTable').on('click', '.remove-item-btn',  function (event){
+            $(this).parent().parent().remove()
+            var totalItems = 0
+            var grandTotal = 0
+            $('.modal-tr-qty').each(function(){
+                totalItems += parseInt($(this).html());
+            });
+            $('.modal-tr-total').each(function(){
+                grandTotal += parseFloat($(this).data('totalvalue'));
+            });
+            var totalTr = "<tr id='modalTotalRow'>" +
+                    "       <td>Total: </td>" +
+                    "       <td id='modalItemsTotal'>" + totalItems + "</td>" +
+                    "       <td id='modalGrandTotal' data-totalvalue=" + grandTotal + ">\u20B1 " + grandTotal.toFixed(2) + "</td>" +
+                    "</tr>"
+            $('#modalTotalRow').remove()
+            $('#modalTable tbody').append(totalTr)
+            $('#cart-item-count').html($('.modal-tr').length)
+        })
+
+
+        $('#payment').change(function (){
+            console.log(this.value)
+            var grandTotal = $("#modalTable").find("#modalGrandTotal").data('totalvalue')
+            $('#change').val("\u20B1 " + (this.value - grandTotal).toFixed(2))
+        })
+
+
+        $SCRIPT_ROOT = {{ request.script_root|tojson }};
+
+        $('#checkout-btn').click(function (){
+            var data = []
+            var comment = $("#comment").val()
+            $('.modal-tr').each(function(){
+                var itemId = $(this).data('item-id')
+                var quantity = $(this).data('purchase-qty')
+                var totalValue = $(this).data('total-value')
+                var retailPrice = $(this).data('retail-price')
+
+                data.push({"item_id": itemId,
+                            "quantity": quantity,
+                            "total_cost": totalValue,
+                            "price_per_piece": parseFloat(retailPrice)
+                })
+            });
+            data.push({"comment": comment})
+            console.log(data)
+            $.ajax({
+                url: "{{ url_for('checkout_items')}}",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                type: 'POST',
+                success: function(response){
+                    console.log(response);
+                    window.location.href = window.location.href;
+                },
+                error: function(error){
+                    console.log(error);
+                }
+            });
+        })
+
+
+    } );
+</script>
+
+{% endblock %}

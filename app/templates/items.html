@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container">
+	<div class="row">
+		<div class="col-lg-4 col-md-4 col-sm-12">
+          <h3>Add Item</h3>
+          {{ wtf.quick_form(form) }}
+        </div>
+        <div class="col-lg-8 col-md-8 col-sm-12">
+          <h3 class="text-center">Items</h3>
+            <table class="table table-bordered table-hover table-responsive">
+                <thead>
+                    <th>Item</th>
+                    <th>Barcode</th>
+                    <th>Retail Price</th>
+                    <th>Action</th>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            <div {% if item.date_discontinued %} style="color: red" {% endif %}>
+                                {{ item.item_name }}
+                                {% if item.date_discontinued %} (Discontinued) {% endif %}
+                            </div>
+                            <div class="help-block">{{ item.description }}</div>
+                        </td>
+                        <td>{{ item.barcode }}</td>
+                        <td>&#x20B1; {{ item.last_retail_price() }}</td>
+                        <td>
+                            <a class="btn btn-warning" href="{{ url_for('edit_item', id=item.id) }}"
+                               title="Edit" data-toggle="tooltip" data-placement="top">
+                                <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                            </a>
+                            <a class="btn btn-info" href="{{ url_for('update_retail_price', item_id=item.id) }}"
+                               title="Update Retail Price" data-toggle="tooltip" data-placement="top">
+                                <span class="glyphicon glyphicon-usd" aria-hidden="true"></span>
+                            </a>
+                            <button class="btn btn-danger" title="Discontinue" data-toggle="popover"
+                                data-placement="top" type="button" data-html="true"
+                                data-content="Are you sure you want to discontinue this item?
+                                <a class='btn btn-danger' href='{{ url_for('discontinue_item', id=item.id) }}'>
+                                Discontinue </a>">
+                                <span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready( function () {
+        $('.table').DataTable();
+    } );
+</script>
+
+{% endblock %}

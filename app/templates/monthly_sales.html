@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container">
+	<div class="row">
+		<div class="text-center">
+            <h3>{{ current_month_name }} {{ current_year }} Sales Summary</h3>
+        </div>
+	</div>
+    <div class="row">
+        <div class="col-lg-8 col-md-8 col-sm-12" id="columnchart" style="width: 60%; height: 300px;"></div>
+        <div class="col-lg-4 col-md-4 col-sm-12" id="line_chart" style="width: 40%; height: 300px"></div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 col-md-12 col-sm-12">
+            <ul class="nav nav-tabs" role="tablist">
+                {% for year in years %}
+                <li class="year_{{ year }}" style="font-size: 20px; {% if year == current_year %} background-color: #f7f5f5; border: 1px solid black {% endif %}">
+                    <a href="{{ url_for('monthly_sales', year=year, month=current_month) }}" style="color: blue" >{{ year }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            <ul class="nav nav-tabs" role="tablist">
+            {% for m in months %}
+                <li class="month_{{ m.id }}" style="font-size: 20px;{% if m.id == current_month %} background-color: #f7f5f5; border: 1px solid black {% endif %}">
+                    <a href="{{ url_for('monthly_sales', year=current_year, month=m.id) }}"  style="color: blue">{{ m.name }}</a>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <table class="table table-bordered table-hover" id="main-table">
+            <thead>
+                <th>Day</th>
+                <th># Transactions</th>
+                <th># Items sold</th>
+                <th>Expense</th>
+                <th>Gross income</th>
+                <th>Net income</th>
+            </thead>
+            <tbody>
+                {% for sale in daily_sales %}
+                <tr>
+                    <td>
+                        <a href="{{url_for('daily_sales', year=current_year, month=current_month, day=sale.day) }}">
+                            {{ current_month_name }} {{ sale.day }}
+                        </a>
+                    </td>
+                    <td>{{ sale.transaction_count }}</td>
+                    <td>{{ sale.items_sold }}</td>
+                    <td>{{ sale.expenses }}</td>
+                    <td>{{ sale.gross }}</td>
+                    <td>{{ sale.net }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+    $(document).ready( function () {
+        $('#main-table').DataTable({
+            ordering: false,
+        });
+
+        var sales_data;// = [['Month', 'Sales', 'Cost', 'Profit']];
+        var transaction_data;// = [['Month', 'Transactions']];
+
+        // $.ajax({
+        //         url: "{{ url_for('get_monthly_sales', year=current_year) }}",
+        //         method: 'get'
+        //    }).done(function(data) {
+        //         sales_data = data[0]
+        //         transaction_data = data[1]
+        // });
+
+        $.getJSON("{{ url_for('get_monthly_sales', year=current_year) }}", {
+          }, function(data) {
+            sales_data = data[0]
+            transaction_data = data[1]
+          });
+
+        setTimeout(() => {
+          console.log(sales_data)
+        console.log(transaction_data)
+
+        google.charts.load('current', {'packages':['corechart', 'bar']});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+
+            // var data = google.visualization.arrayToDataTable(sales_data);
+            var barData = new google.visualization.DataTable();
+            barData.addColumn('string', 'Month');
+            barData.addColumn('number', 'Gross');
+            barData.addColumn('number', 'Expense');
+            barData.addColumn('number', 'Profit');
+
+            var barDataRows = []
+            for (var i = 0; i < sales_data.length; i++){
+                console.log(sales_data[i])
+                barDataRows.push([sales_data[i][0], parseFloat(sales_data[i][1]),  parseFloat(sales_data[i][2]), parseFloat(sales_data[i][3])])
+
+            }
+            barData.addRows(barDataRows)
+            //barData.addRows(JSON.stringify(sales_data))
+
+            var barOptions = {
+                title: 'Monthly Statistics',
+                subtitle: 'Sales, Expenses, and Profit: {{ current_year }} ',
+                chartArea:{width:'100%',height:'75%'},
+                legend: { position: 'top', maxLines: 1 }
+            };
+
+            var barChart = new google.visualization.ColumnChart(document.getElementById('columnchart'));
+            barChart.draw(barData, barOptions);
+          }
+
+
+            google.charts.load('current', {'packages':['corechart']});
+            google.charts.setOnLoadCallback(drawLineChart);
+
+            function drawLineChart() {
+            // var data = google.visualization.arrayToDataTable(transaction_data);
+            var lineData = new google.visualization.DataTable();
+            lineData.addColumn('string', 'Month');
+            lineData.addColumn('number', 'Transactions');
+
+            var lineDataRows = []
+            for (var i =0; i< transaction_data.length; i++){
+                lineDataRows.push([transaction_data[i][0], parseFloat(transaction_data[i][1])])
+            }
+
+            lineData.addRows(lineDataRows)
+
+            //lineData.addRows(JSON.stringify(transaction_data))
+
+            var lineOptions = {
+                title: 'Monthly Transactions',
+                legend: { position: 'top' },
+                chartArea:{width:'100%',height:'75%'},
+                pointsVisible: 'true'
+            };
+
+            var lineChart = new google.visualization.LineChart(document.getElementById('line_chart'));
+
+            lineChart.draw(lineData, lineOptions);
+            }
+        }, 1000);
+
+        } );
+
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+    {% if title %}{{ title }} - Ricos POS {% else %} Ricos POS {% endif %}
+{% endblock %}
+
+{% block navbar %}
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+	  <div class="container">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+		  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		  </button>
+		  <a class="navbar-brand" href="{{url_for('index')}}" style="font-size: 28px; font-weight: bold;">
+			  Rico's POS
+		  </a>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		  <ul class="nav navbar-nav">
+			{% if current_user.is_authenticated %}
+		  	<li class="nav-item">
+				<a class="nav-link" href="{{ url_for('index') }}">Store</a>
+			</li>
+		  	<li class="nav-item">
+				<a class="nav-link" href="{{ url_for('daily_sales', year=datetime_now.year, month=datetime_now.month, day=datetime_now.day) }}">Daily Sales</a>
+			</li>
+		  	<li class="nav-item">
+				<a class="nav-link" href="{{ url_for('monthly_sales', year=datetime_now.year, month=datetime_now.month) }}">Monthly Sales</a>
+			</li>
+		  	{% if current_user.is_admin() %}
+		  	<li class="nav-item">
+				<a class="nav-link" href="{{ url_for('items') }}">Items</a>
+			</li>
+		  	<li class="nav-item">
+				<a class="nav-link" href="{{ url_for('inventories') }}">Inventory</a>
+			</li>
+		  	{% endif %}
+			{% endif %}
+		  </ul>
+
+		  <ul class="nav navbar-nav navbar-right">
+		  	{% if current_user.is_anonymous %}
+				<li class="nav-item">
+					<a class="nav-link" href="{{ url_for('login') }}">Login</a>
+				</li>
+				{% elif current_user.is_authenticated %}
+				<li class="nav-item">
+					<div class="navbar-text" href="#">User: {{current_user.username}}</div>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+				</li>
+				{% endif %}
+		  </ul>
+		</div><!-- /.navbar-collapse -->
+	  </div><!-- /.container-fluid -->
+	</nav>
+{% endblock %}
+
+{% block content %}
+<div style="/*animation: 0.3s ease-out 0s 1 normal none running isyUUs;*/margin-bottom:40px;">
+    <div class="container" style="padding-top: 90px">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-dismissable fade-in {{ category }}" role="alert">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				{{ message }}
+			</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        
+    </div>
+	
+	{% block app_content %}
+	{% endblock %}
+</div>	
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!--<link rel="shortcut icon" href="/static/substr.ico">-->
+<!--<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">-->
+<link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono&display=swap" rel="stylesheet">
+<!--<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">-->
+<!--<script src="https://kit.fontawesome.com/b338c84dd2.js" crossorigin="anonymous"></script>-->
+<link rel="stylesheet" href="//cdn.datatables.net/1.13.2/css/jquery.dataTables.min.css">
+{{ moment.include_moment() }}
+<style>
+	.help-block {
+		margin-bottom: 0 !important;
+	}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!--<script src="https://code.jquery.com/jquery-1.12.4.js"></script>-->
+<!------------ For autocomplete from jqueryui     -------------------------->
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>-->
+<!--      For Bootstrap 4 ------------------------->
+<!--script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script      bootstrap jquery not compatible with jqueryui-->
+<!--<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>-->
+<!--<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>-->
+<!--- For bootstrap 4 -------------------------------->
+<script src="//cdn.datatables.net/1.13.2/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready( function () {
+
+	var csrf_token = "{{ csrf_token() }}";
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrf_token);
+            }
+        }
+    });
+
+	$('input[type="submit"]').removeClass('btn-default').addClass('btn-primary');
+	$("body").tooltip({ selector: '[data-toggle=tooltip]' });
+	$("body").popover({ selector: '[data-toggle=popover]' });
+} );
+</script>
+{% endblock %}

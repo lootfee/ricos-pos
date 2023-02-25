@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container">
+	<div class="row">
+		<div class="col-lg-4 col-md-4 col-sm-4">
+          <h3>Edit Sale Transaction Date</h3>
+          {{ wtf.quick_form(form) }}
+
+		<table class="table table-bordered">
+			<thead>
+				<th>Item</th>
+				<th>Quantity</th>
+				<th>Price</th>
+				<th>Total</th>
+			</thead>
+			<tbody>
+				{% set grand_total = namespace(total=0) %}
+				{% for item in sale.items %}
+
+				<tr>
+					<th>
+						<div>
+							{{ item.item.item_name }} ({{ item.item.barcode }})
+						</div>
+						<div class="help-block">{{ item.item.description }}</div>
+					</th>
+					<td>{{item.quantity}}</td>
+					<td>{{ item.price_per_piece }}</td>
+					{% set grand_total.total = grand_total.total + item.total_cost %}}
+					<td>{{ item.total_cost }}</td>
+				</tr>
+				{% endfor %}
+				<tr>
+					<th>Total: </th>
+					<td></td>
+					<td></td>
+					<td>{{ grand_total.total }}</td>
+				</tr>
+			</tbody>
+		</table>
+			<div class="help-block">Comment: {{ sale.comment }}</div>
+
+        </div>
+	</div>
+</div>
+{% endblock %}

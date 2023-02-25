@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<div class="container">
+	<div class="row">
+		<div class="col-lg-4 col-md-4 col-sm-4">
+          <h3>Edit Sale Item</h3>
+			<h4>{{ sale_item.item.item_name }}</h4>
+			<div class="help-block">{{ sale_item.item.description }}</div>
+			<div class="help-block">Sale date: {{ sale_item.sale.date_sold.strftime('%b %d, %Y %H:%M') }}</div>
+			{{ wtf.quick_form(form) }}
+        </div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script>
+	document.getElementById('quantity').addEventListener('change', function () {
+		var total = this.value * document.getElementById('retail_price').value;
+		document.getElementById('total_cost').value = total.toFixed(2);
+	})
+</script>
+{% endblock %}
