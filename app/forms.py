@@ -13,30 +13,30 @@ def validate_select(form, field):
 
 
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
+    username = StringField('Username', validators=[InputRequired()])
+    password = PasswordField('Password', validators=[InputRequired()])
     remember_me = BooleanField('Remember Me')
     submit_login = SubmitField('Sign In')
 
 
 class AddItemForm(FlaskForm):
-    item_name = StringField('Item name', validators=[DataRequired()])
+    item_name = StringField('Item name', validators=[InputRequired()])
     description = StringField('Description')
-    barcode = StringField('Barcode', validators=[DataRequired()])
+    barcode = StringField('Barcode', validators=[InputRequired()])
     # purchase_price = FloatField('Purchase price', validators=[DataRequired()])
-    retail_price = FloatField('Retail price', validators=[DataRequired()])
+    retail_price = FloatField('Retail price', validators=[InputRequired()])
     submit = SubmitField('Save')
 
 
 class EditItemForm(FlaskForm):
-    item_name = StringField('Item name', validators=[DataRequired()])
+    item_name = StringField('Item name', validators=[InputRequired()])
     description = StringField('Description')
-    barcode = StringField('Barcode', validators=[DataRequired()])
+    barcode = StringField('Barcode', validators=[InputRequired()])
     submit = SubmitField('Save')
 
 
 class EditRetailPriceForm(FlaskForm):
-    retail_price = FloatField('New Retail Price', validators=[DataRequired()])
+    retail_price = FloatField('New Retail Price', validators=[InputRequired()])
     submit = SubmitField('Save')
 
 
@@ -55,7 +55,7 @@ class EditSaleDateForm(FlaskForm):
 
 
 class EditSaleItemForm(FlaskForm):
-    quantity = IntegerField('Quantity', validators=[DataRequired()])
+    quantity = IntegerField('Quantity', validators=[InputRequired()])
     retail_price = FloatField('Retail price', validators=[DataRequired()], render_kw={'readonly': 'true'})
     total_cost = FloatField('Total cost', validators=[DataRequired()], render_kw={'readonly': 'true'})
     submit = SubmitField('Save')

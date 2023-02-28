@@ -44,7 +44,9 @@ class Item(UserMixin, db.Model):
     date_discontinued = db.Column(db.DateTime)
 
     def last_retail_price(self):
-        last_retail_price = self.retail_prices[-1].retail_price
+        last_retail_price = 0
+        if len(self.retail_prices) > 0:
+            last_retail_price = self.retail_prices[-1].retail_price
         return last_retail_price
 
     # def last_purchase_per_piece_price(self):
