@@ -43,7 +43,7 @@ class EditRetailPriceForm(FlaskForm):
 class AddInventoryForm(FlaskForm):
     item = SelectField('Item', coerce=int, validators=[InputRequired(), validate_select])
     quantity = IntegerField('Quantity', validators=[InputRequired()])
-    purchase_price = FloatField('Purchase price', validators=[InputRequired()])
+    purchase_price = FloatField('Purchase total price', validators=[InputRequired()])
     date_received = DateField('Date Received', validators=[InputRequired()])
     submit = SubmitField('Submit')
 
