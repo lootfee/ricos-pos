@@ -57,6 +57,7 @@
                         <div>
                             {{ sale.date_sold.strftime('%b %d, %Y %H:%M') }}
                         </div>
+                        <div>Comment: {{ sale.comment }}</div>
                         <div>
                             <a class="btn btn-warning" href="{{ url_for('edit_sale_date', id=sale.id) }}"
                                title="Edit" data-toggle="tooltip" data-placement="top">

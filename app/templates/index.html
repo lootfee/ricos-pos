@@ -65,31 +65,46 @@
         <h4 class="modal-title" id="cartModalLabel">Shopping Cart</h4>
       </div>
       <div class="modal-body">
-        <table class="table table-bordered" id="modalTable">
-            <thead>
-                <th>Item</th>
-                <th>Pruchase Qty</th>
-                <th>Total</th>
-                <th>Action</th>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-        <div class="row">
-            <div class="col-lg-6 col-md-6 col-sm-6">
-                <label for="payment" class="control-label">Payment</label>
-                <input class="form-control" type="number" id="payment" step="0.1">
+            <div class="row" style="margin-bottom: 5px;">
+                <div class="col-lg-6 col-md-6 col-sm-12">
+                    <label for="barcode-input" class="control-label">Input barcode</label>
+                    <div class="input-group">
+                        <input class="form-control" type="text" id="barcode-input">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" type="submit" id="barcode-input-btn">Search</button>
+                        </span>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-12 text-danger" id="barcode-input-error"></div>
             </div>
-            <div class="col-lg-6 col-md-6 col-sm-6">
-                <label for="change" class="control-label">Change</label>
-                <input class="form-control" id="change" readonly>
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12">
+                    <table class="table table-bordered" id="modalTable">
+                        <thead>
+                            <th>Item</th>
+                            <th>Pruchase Qty</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                      </table>
+                </div>
             </div>
-            <div class="col-lg-12 col-md-12 col-sm-12">
-                <label for="comment" class="control-label">Comments</label>
-                <input class="form-control" type="text" id="comment">
+            <div class="row">
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                    <label for="payment" class="control-label">Payment</label>
+                    <input class="form-control" type="number" id="payment" step="0.1">
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6">
+                    <label for="change" class="control-label">Change</label>
+                    <input class="form-control" id="change" readonly>
+                </div>
+                <div class="col-lg-12 col-md-12 col-sm-12">
+                    <label for="comment" class="control-label">Comments</label>
+                    <input class="form-control" type="text" id="comment">
+                </div>
             </div>
-        </div>
-
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -115,11 +130,18 @@
 <script>
     $(document).ready( function () {
         $('#shop-table').DataTable();
-
+        var item_dict = {}
         {% for item in items %}
+
             {% set total_inv = item.get_total_inv() %}
             {% set retail_price = item.last_retail_price() %}
 
+            item_dict["{{item.barcode}}"] = {'name': "{{item.item_name}}",
+                                'description': "{{item.description}}",
+                                'total_inv': {{total_inv}},
+                                'retail_price': {{retail_price}},
+                                'id': {{item.id}}
+                                }
 
             $("#item-{{ item.id }}-purchase-qty").change(function (){
                 if (this.value > {{ total_inv }}){
@@ -134,26 +156,29 @@
                 var itemId = this.dataset.itemid
                 var itemName = this.dataset.itemname
                 var description = this.dataset.description
-                var retailPrice = {{ retail_price }}//this.dataset.retailprice
+                var retailPrice = {{ retail_price }}
                 console.log("itemId" + itemId)
                 var purchaseQty = $('#item-' + itemId + '-purchase-qty').val()
                 var purchaseTotal = $('#item-' + itemId + '-purchase-total').val()
                 var purchaseTotalValue = parseInt(purchaseQty) * {{ retail_price }}
 
-                $('#modalTr{{ item.id }}').remove()
-                var tr = "<tr id='modalTr{{ item.id }}' class='modal-tr' data-item-id='{{ item.id }}' " +
-                    "       data-retail-price='{{ retail_price }}' data-total-value=" + purchaseTotalValue + " data-purchase-qty=" + purchaseQty + ">" +
-                    "       <td class='modal-tr-item' data-item-id='{{ item.id }}' data-retail-price='{{ retail_price }}'>" +
-                    "           <div>" + itemName + " @\u20B1 " + retailPrice + "</div>" +
-                    "           <div class='help-block'>" + description + "</div>" +
-                    "       </td>" +
-                    "       <td class='modal-tr-qty'>" + purchaseQty + "</td>" +
-                    "       <td class='modal-tr-total' data-totalvalue=" + purchaseTotalValue + ">" + purchaseTotal + "</td>" +
-                    "       <td><button type='button' class='btn btn-danger remove-item-btn' data-toggle='tooltip' title='Remove item'><span class=\"glyphicon glyphicon-trash\" aria-hidden=\"true\"></span></button></td>" +
-                    "</tr>"
+                if (purchaseQty > 0){
+                    $('#modalTr{{ item.id }}').remove()
+                    var tr = "<tr id='modalTr{{ item.id }}' class='modal-tr' data-item-id='{{ item.id }}' " +
+                        "       data-retail-price='{{ retail_price }}' data-total-value=" + purchaseTotalValue + " data-purchase-qty=" + purchaseQty + ">" +
+                        "       <td class='modal-tr-item' data-item-id='{{ item.id }}' data-retail-price='{{ retail_price }}'>" +
+                        "           <div>" + itemName + " @\u20B1 " + retailPrice + "</div>" +
+                        "           <div class='help-block'>" + description + "</div>" +
+                        "       </td>" +
+                        "       <td class='modal-tr-qty' id='modal-tr{{ item.id }}-qty'>" + purchaseQty + "</td>" +
+                        "       <td class='modal-tr-total' id='modal-tr{{ item.id }}-total' data-totalvalue=" + purchaseTotalValue + ">" + purchaseTotal + "</td>" +
+                        "       <td><button type='button' class='btn btn-danger remove-item-btn' data-toggle='tooltip' title='Remove item'><span class=\"glyphicon glyphicon-trash\" aria-hidden=\"true\"></span></button></td>" +
+                        "</tr>"
 
-                $('#modalTable tbody').append(tr)
-                $('#cart-item-count').html($('.modal-tr').length)
+                    $('#modalTable tbody').append(tr);
+                    $('#cart-item-count').html($('.modal-tr').length);
+                }
+
             });
 
 
@@ -206,6 +231,65 @@
             var grandTotal = $("#modalTable").find("#modalGrandTotal").data('totalvalue')
             $('#change').val("\u20B1 " + (this.value - grandTotal).toFixed(2))
         })
+
+
+        $(document).keypress(function (e){
+            console.log(e)
+            if (e.keyCode === 13){
+                if ($('#cartModal.in').length > 0){
+                    $('#barcode-input-btn').click();
+                }
+            }
+        });
+
+        $('#barcode-input-btn').click(function (){
+            $('#barcode-input-error').html("");
+            var item_q = item_dict[$('#barcode-input').val()];
+            var item_qty_q = parseInt($('#modalItemsTotal').html());
+            var item_total_q = parseFloat($('#modalGrandTotal').data('totalvalue'));
+
+            if ($('#modalTr' + item_q.id).length > 0){
+                var curr_qty = parseInt($('#modal-tr' + item_q.id + '-qty').html());
+                var curr_total = (curr_qty + 1) * item_q.retail_price;
+                if (item_q.total_inv >= (curr_qty + 1)){
+                    $('#modalTr' + item_q.id).data('total-value', curr_total);
+                    $('#modalTr' + item_q.id).data('purchase-qty', curr_qty + 1);
+                    $('#modal-tr' + item_q.id + '-qty').html((curr_qty + 1));
+                    $('#modal-tr' + item_q.id + '-total').html("\u20B1 " + curr_total.toFixed(2));
+                    $('#modal-tr' + item_q.id + '-total').data('totalvalue', curr_total);
+
+                    $('#modalItemsTotal').html(item_qty_q + 1);
+                    $('#modalGrandTotal').html("\u20B1 " + (item_total_q + item_q.retail_price).toFixed(2));
+                    $('#modalGrandTotal').data('totalvalue', item_total_q + item_q.retail_price)
+                }
+                else {
+                    $('#barcode-input-error').html("Insufficient amount in inventory for " + item_q.name);
+                }
+            }
+            else if ($('#modalTr' + item_q.id).length < 1){
+                if (item_q.total_inv > 0){
+                    var tr = "<tr id='modalTr" + item_q.id + "' class='modal-tr' data-item-id='" + item_q.id + "' " +
+                    "       data-retail-price='" + item_q.retail_price + "' data-total-value='" + item_q.retail_price + "' data-purchase-qty='1'>" +
+                    "       <td class='modal-tr-item' data-item-id='" + item_q.id + "' data-retail-price='" + item_q.retail_price + "'>" +
+                    "           <div>" + item_q.name + " @\u20B1 " + item_q.retail_price + "</div>" +
+                    "           <div class='help-block'>" + item_q.description + "</div>" +
+                    "       </td>" +
+                    "       <td class='modal-tr-qty' id='modal-tr" + item_q.id + "-qty'>1</td>" +
+                    "       <td class='modal-tr-total' id='modal-tr" + item_q.id + "-total' data-totalvalue=" + item_q.retail_price + ">\u20B1 " + (item_q.retail_price).toFixed(2) + "</td>" +
+                    "       <td><button type='button' class='btn btn-danger remove-item-btn' data-toggle='tooltip' title='Remove item'><span class=\"glyphicon glyphicon-trash\" aria-hidden=\"true\"></span></button></td>" +
+                    "</tr>"
+                    $('#modalTable tr:last').before(tr);
+                    $('#cart-item-count').html($('.modal-tr').length)
+
+                    $('#modalItemsTotal').html(item_qty_q + 1);
+                    $('#modalGrandTotal').html("\u20B1 " + (item_total_q + item_q.retail_price).toFixed(2));
+                    $('#modalGrandTotal').data('totalvalue', item_total_q + item_q.retail_price)
+                }
+                else {
+                    $('#barcode-input-error').html("Insufficient amount in inventory for " + item_q.name);
+                }
+            }
+        });
 
 
         $SCRIPT_ROOT = {{ request.script_root|tojson }};

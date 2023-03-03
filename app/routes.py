@@ -319,6 +319,11 @@ def items():
     form = AddItemForm()
     items = Item.query.all()
     if form.validate_on_submit():
+        barcode_q = Item.query.filter_by(barcode=form.barcode.data).first()
+        if barcode_q:
+            flash("Item barcode has already been registered", "alert-danger")
+            return redirect(url_for('items'))
+
         item = Item(item_name=form.item_name.data, description=form.description.data, barcode=form.barcode.data)
         db.session.add(item)
         db.session.commit()
