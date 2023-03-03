@@ -127,6 +127,8 @@
 
 {% block scripts %}
 {{ super() }}
+<script src="{{url_for('static', filename='JSPrintManager.js')}}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.3.5/bluebird.min.js"></script>
 <script>
     $(document).ready( function () {
         $('#shop-table').DataTable();
@@ -164,7 +166,7 @@
 
                 if (purchaseQty > 0){
                     $('#modalTr{{ item.id }}').remove()
-                    var tr = "<tr id='modalTr{{ item.id }}' class='modal-tr' data-item-id='{{ item.id }}' " +
+                    var tr = "<tr id='modalTr{{ item.id }}' class='modal-tr' data-item-id='{{ item.id }}' data-barcode='{{ item.barcode }}'" +
                         "       data-retail-price='{{ retail_price }}' data-total-value=" + purchaseTotalValue + " data-purchase-qty=" + purchaseQty + ">" +
                         "       <td class='modal-tr-item' data-item-id='{{ item.id }}' data-retail-price='{{ retail_price }}'>" +
                         "           <div>" + itemName + " @\u20B1 " + retailPrice + "</div>" +
@@ -234,7 +236,6 @@
 
 
         $(document).keypress(function (e){
-            console.log(e)
             if (e.keyCode === 13){
                 if ($('#cartModal.in').length > 0){
                     $('#barcode-input-btn').click();
@@ -294,6 +295,12 @@
 
         $SCRIPT_ROOT = {{ request.script_root|tojson }};
 
+        var receiptItems = ""
+        var receiptTotal = ""
+        var receiptTotalItems = ""
+        var receiptPaid = ""
+        var receiptChange = ""
+
         $('#checkout-btn').click(function (){
             var data = []
             var comment = $("#comment").val()
@@ -302,7 +309,8 @@
                 var quantity = $(this).data('purchase-qty')
                 var totalValue = $(this).data('total-value')
                 var retailPrice = $(this).data('retail-price')
-
+                var barcode = $(this).data('barcode')
+                receiptItems += `${item_dict[barcode].name} (${barcode}) \x0A\x09 ${quantity} @ \u20B1${(item_dict[barcode].retail_price).toFixed(2)}/ea \x09\x09\x09 \u20B1${totalValue.toFixed(2)} \x0A`
                 data.push({"item_id": itemId,
                             "quantity": quantity,
                             "total_cost": totalValue,
@@ -310,22 +318,88 @@
                 })
             });
             data.push({"comment": comment})
-            console.log(data)
-            $.ajax({
+
+            receiptTotalItems = $('#modalItemsTotal').html()
+            receiptTotal = $('#modalGrandTotal').html()
+            receiptPaid = $('#payment').val()
+            receiptChange = $('#change').val()
+            printReceipt();
+            /*$.ajax({
                 url: "{{ url_for('checkout_items')}}",
                 data: JSON.stringify(data),
                 contentType: "application/json",
                 type: 'POST',
                 success: function(response){
-                    console.log(response);
                     window.location.href = window.location.href;
+                    printReceipt();
                 },
                 error: function(error){
                     console.log(error);
                 }
-            });
+            });*/
         })
 
+
+        function jspmWSStatus() {
+            if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Open)
+                return true;
+            else if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Closed) {
+                alert('JSPrintManager (JSPM) is not installed or not running! Download JSPM Client App from https://neodynamic.com/downloads/jspm');
+                return false;
+            }
+            else if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Blocked) {
+                alert('JSPM has blocked this website!');
+                return false;
+            }
+        }
+
+        function printReceipt(o) {
+            if (jspmWSStatus()) {
+                //Create a ClientPrintJob
+                var cpj = new JSPM.ClientPrintJob();
+                //Set Printer type (Refer to the help, there many of them!)
+                if ($('#useDefaultPrinter').prop('checked')) {
+                    cpj.clientPrinter = new JSPM.DefaultPrinter();
+                } /*else {
+                    cpj.clientPrinter = new JSPM.InstalledPrinter($('#installedPrinterName').val());
+                }*/
+                //Set content to print...
+                //Create ESP/POS commands for sample label
+                var esc = '\x1B'; //ESC byte in hex notation
+                var newLine = '\x0A'; //LF byte in hex notation
+
+                var cmds = esc + "@"; //Initializes the printer (ESC @)
+                cmds += esc + '!' + '\x38'; //Emphasized + Double-height + Double-width mode selected (ESC ! (8 + 16 + 32)) 56 dec => 38 hex
+                cmds += 'RICO\'S STORE'; //text to print
+                cmds += newLine + newLine;
+                cmds += esc + '!' + '\x00'; //Character font A selected (ESC ! 0)
+                cmds += receiptItems;
+                // cmds += 'COOKIES                   5.00';
+                // cmds += newLine;
+                // cmds += 'MILK 65 Fl oz             3.78';
+                cmds += newLine + newLine;
+                // cmds += 'SUBTOTAL                  8.78';
+                // cmds += newLine;
+                // cmds += 'TAX 5%                    0.44';
+                // cmds += newLine;
+                cmds += `TOTAL                     ${receiptTotal}`;
+                cmds += newLine;
+                cmds += `CASH PAID                ${receiptPaid}`;
+                cmds += newLine;
+                cmds += `CHANGE                  ${receiptChange}`;
+                cmds += newLine + newLine;
+                cmds += esc + '!' + '\x18'; //Emphasized + Double-height mode selected (ESC ! (16 + 8)) 24 dec => 18 hex
+                cmds += `NUMBER OF ITEMS = ${receiptTotalItems}`;
+                cmds += esc + '!' + '\x00'; //Character font A selected (ESC ! 0)
+                cmds += newLine + newLine;
+                cmds += '{{datetime_now.strftime("%b %d, %Y %H:%M")}}';
+                cmds += '\x09\x09\x09THANK YOU'
+
+                cpj.printerCommands = cmds;
+                //Send print job to printer!
+                cpj.sendToClient();
+            }
+        }
 
     } );
 </script>
