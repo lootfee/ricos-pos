@@ -22,7 +22,7 @@ class LoginForm(FlaskForm):
 class AddItemForm(FlaskForm):
     item_name = StringField('Item name', validators=[InputRequired()])
     description = StringField('Description')
-    barcode = StringField('Barcode', validators=[InputRequired()])
+    barcode = StringField('Barcode')#, validators=[InputRequired()]
     # purchase_price = FloatField('Purchase price', validators=[DataRequired()])
     retail_price = FloatField('Retail price', validators=[InputRequired()])
     submit = SubmitField('Save')

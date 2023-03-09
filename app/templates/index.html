@@ -57,6 +57,7 @@
 	</div>
 </div>
 
+
 <div class="modal fade" id="cartModal" tabindex="-1" role="dialog" aria-labelledby="cartModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -130,6 +131,23 @@
 <script src="{{url_for('static', filename='JSPrintManager.js')}}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.3.5/bluebird.min.js"></script>
 <script>
+    /*function printDiv()
+        {
+
+          var divToPrint=document.getElementById('DivIdToPrint');
+
+          var newWin=window.open('','Print-Window');
+
+          newWin.document.open();
+
+          newWin.document.write('<html><body onload="window.print()">'+divToPrint.innerHTML+'</body></html>');
+
+          newWin.document.close();
+
+          setTimeout(function(){newWin.close();},10);
+
+        }*/
+
     $(document).ready( function () {
         $('#shop-table').DataTable();
         var item_dict = {}
@@ -323,24 +341,27 @@
             receiptTotal = $('#modalGrandTotal').html()
             receiptPaid = $('#payment').val()
             receiptChange = $('#change').val()
-            printReceipt();
-            /*$.ajax({
+            // printReceipt();
+            $.ajax({
                 url: "{{ url_for('checkout_items')}}",
                 data: JSON.stringify(data),
                 contentType: "application/json",
                 type: 'POST',
                 success: function(response){
                     window.location.href = window.location.href;
-                    printReceipt();
                 },
                 error: function(error){
                     console.log(error);
                 }
-            });*/
+            });
         })
 
 
-        function jspmWSStatus() {
+
+
+        /*function jspmWSStatus() {
+            console.log(JSPM.JSPrintManager.websocket_status)
+            console.log(JSPM.WSStatus.Closed)
             if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Open)
                 return true;
             else if (JSPM.JSPrintManager.websocket_status == JSPM.WSStatus.Closed) {
@@ -351,18 +372,18 @@
                 alert('JSPM has blocked this website!');
                 return false;
             }
-        }
+        }*/
 
-        function printReceipt(o) {
-            if (jspmWSStatus()) {
+        /*function printReceipt(o) {
+            if (!jspmWSStatus()) {
                 //Create a ClientPrintJob
                 var cpj = new JSPM.ClientPrintJob();
                 //Set Printer type (Refer to the help, there many of them!)
                 if ($('#useDefaultPrinter').prop('checked')) {
                     cpj.clientPrinter = new JSPM.DefaultPrinter();
-                } /*else {
+                } /!*else {
                     cpj.clientPrinter = new JSPM.InstalledPrinter($('#installedPrinterName').val());
-                }*/
+                }*!/
                 //Set content to print...
                 //Create ESP/POS commands for sample label
                 var esc = '\x1B'; //ESC byte in hex notation
@@ -395,11 +416,13 @@
                 cmds += '{{datetime_now.strftime("%b %d, %Y %H:%M")}}';
                 cmds += '\x09\x09\x09THANK YOU'
 
+                $(window).print(cmds);
+
                 cpj.printerCommands = cmds;
                 //Send print job to printer!
                 cpj.sendToClient();
             }
-        }
+        }*/
 
     } );
 </script>
